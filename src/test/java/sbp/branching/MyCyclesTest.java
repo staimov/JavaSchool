@@ -11,6 +11,7 @@ public class MyCyclesTest
 {
     /**
      * Проверка количества обращений к {@link Utils}
+     * Тест править нельзя
      */
     @Test
     public void cycleForExample_Test()
@@ -28,6 +29,7 @@ public class MyCyclesTest
 
     /**
      * Проверка количества обращений к {@link Utils}
+     * Тест править нельзя
      */
     @Test
     public void cycleWhileExample_Test()
@@ -45,6 +47,7 @@ public class MyCyclesTest
 
     /**
      * Проверка количества обращений к {@link Utils}
+     * Тест править нельзя
      */
     @Test
     public void cycleDoWhileExample_Test()
