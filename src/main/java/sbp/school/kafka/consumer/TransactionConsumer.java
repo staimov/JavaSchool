@@ -13,6 +13,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * Класс потребитель сообщений-транзакций из брокера сообщений
+ */
 public class TransactionConsumer implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(TransactionConsumer.class);
 
@@ -26,6 +29,9 @@ public class TransactionConsumer implements AutoCloseable {
         this.consumer = new KafkaConsumer<>(kafkaProperties);
     }
 
+    /**
+     * Вычитывает сообщения-транзакции из брокера сообщений
+     */
     public void consume() {
         consumer.subscribe(Collections.singletonList(TOPIC));
 
@@ -85,10 +91,12 @@ public class TransactionConsumer implements AutoCloseable {
         logger.info("Получена и обработана валидная транзакция: {}, offset={}", transaction, record.offset());
     }
 
+    /**
+     * Немедленное прерывает вычитку сообщений
+     */
     @Override
     public void close() {
         logger.info("Прерывание потребителя");
-        //  немедленное прерывание poll
         consumer.wakeup();
     }
 }
