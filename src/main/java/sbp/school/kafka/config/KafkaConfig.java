@@ -22,6 +22,9 @@ public class KafkaConfig {
         }
     }
 
+    /**
+     * Возвращает настройки Kafka
+     */
     public Properties getProperties() {
         return properties;
     }
