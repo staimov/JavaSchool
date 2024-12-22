@@ -8,30 +8,30 @@ import java.time.LocalDateTime;
 /**
  * Транзакция
  */
-public class TransactionDto {
+public final class TransactionDto {
     /**
      * Идентификатор
      */
-    private long id;
+    private final long id;
     /**
      * Тип операции
      */
-    private OperationType operationType;
+    private final OperationType operationType;
     /**
      * Сумма
      */
-    private BigDecimal amount;
+    private final BigDecimal amount;
     /**
      * Номер счета
      */
-    private String account;
+    private final String account;
     /**
      * Метка времени
      */
     @JsonFormat(shape = JsonFormat.Shape.STRING,
             pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
             timezone = "UTC")
-    private LocalDateTime time;
+    private final LocalDateTime time;
 
     public TransactionDto(long id, OperationType operationType, BigDecimal amount, String account, LocalDateTime time) {
         this.id = id;
@@ -45,40 +45,20 @@ public class TransactionDto {
         return id;
     }
 
-    public void setId(long id) {
-        this.id = id;
-    }
-
     public OperationType getOperationType() {
         return operationType;
-    }
-
-    public void setOperationType(OperationType operationType) {
-        this.operationType = operationType;
     }
 
     public BigDecimal getAmount() {
         return amount;
     }
 
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
     public String getAccount() {
         return account;
     }
 
-    public void setAccount(String account) {
-        this.account = account;
-    }
-
     public LocalDateTime getTime() {
         return time;
-    }
-
-    public void setTime(LocalDateTime time) {
-        this.time = time;
     }
 
     @Override
