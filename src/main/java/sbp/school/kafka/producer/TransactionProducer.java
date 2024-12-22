@@ -35,7 +35,7 @@ public class TransactionProducer {
                 logger.error("Ошибка отправки сообщения. Partition: {}, Offset: {}",
                         metadata.partition(), metadata.offset(), exception);
             } else {
-                logger.info("Сообщение успешно отправлено. Partition: {}, Offset: {}",
+                logger.debug("Сообщение успешно отправлено. Partition: {}, Offset: {}",
                         metadata.partition(), metadata.offset());
             }
         });
@@ -45,7 +45,7 @@ public class TransactionProducer {
      * Завершает все операции, освобождает ресурсы
      */
     public void close() {
-        logger.info("Closing & flushing transaction producer");
+        logger.info("Отправка неотправленных сообщений и закрытие производителя транзакций");
         producer.flush();
         producer.close();
     }
