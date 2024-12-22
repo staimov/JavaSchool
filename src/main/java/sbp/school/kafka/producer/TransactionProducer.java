@@ -14,12 +14,13 @@ import java.util.Properties;
 public class TransactionProducer {
     private static final Logger logger = LoggerFactory.getLogger(TransactionProducer.class);
 
-    private static final String TOPIC = "transaction-topic";
+    private final String topicName;
 
     private final KafkaProducer<String, TransactionDto> producer;
 
     public TransactionProducer(Properties kafkaProperties) {
         this.producer = new KafkaProducer<>(kafkaProperties);
+        this.topicName = kafkaProperties.getProperty("transaction.topic.name");
     }
 
     /**
@@ -28,7 +29,7 @@ public class TransactionProducer {
      * @param transaction объект транзакции
      */
     public void sendTransaction(TransactionDto transaction) {
-        ProducerRecord<String, TransactionDto> record = new ProducerRecord<>(TOPIC, transaction);
+        ProducerRecord<String, TransactionDto> record = new ProducerRecord<>(topicName, transaction);
 
         producer.send(record, (metadata, exception) -> {
             if (exception != null) {
