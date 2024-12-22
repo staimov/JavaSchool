@@ -44,7 +44,7 @@ public class TransactionSerializer implements Serializer<TransactionDto> {
                 validator.validate(jsonString);
                 return jsonString.getBytes(StandardCharsets.UTF_8);
             } catch (Exception e) {
-                logger.error("Ошибка сериализации: {}", e.getMessage());
+                logger.error("Ошибка сериализации", e);
                 throw new SerializationException(e);
             }
         }

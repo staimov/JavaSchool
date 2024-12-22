@@ -32,7 +32,7 @@ public class JsonSchemaValidator {
         try (InputStream schemaStream = getClass().getResourceAsStream(schemaPath)) {
             return factory.getSchema(schemaStream);
         } catch (Exception e) {
-            logger.error("Ошибка загрузки json-схемы: {}", e.getMessage());
+            logger.error("Ошибка загрузки json-схемы", e);
             throw new RuntimeException(e);
         }
     }
