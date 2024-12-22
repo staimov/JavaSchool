@@ -15,6 +15,8 @@
         <kafka.version>3.7.1</kafka.version>
         <jackson.version>2.18.1</jackson.version>
         <log4j2.version>2.22.0</log4j2.version>
+        <json-schema-validator.version>1.0.87</json-schema-validator.version>
+        <junit.version>5.11.4</junit.version>
     </properties>
 
     <dependencies>
@@ -54,13 +56,13 @@
         <dependency>
             <groupId>com.networknt</groupId>
             <artifactId>json-schema-validator</artifactId>
-            <version>1.0.87</version>
+            <version>${json-schema-validator.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.11.4</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
