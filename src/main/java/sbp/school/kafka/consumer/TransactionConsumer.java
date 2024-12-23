@@ -19,7 +19,7 @@ import java.util.Properties;
 public class TransactionConsumer implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(TransactionConsumer.class);
 
-    private static final String TOPIC = "transaction-topic";
+    private final String topicName;
 
     private final KafkaConsumer<String, TransactionDto> consumer;
 
@@ -27,13 +27,14 @@ public class TransactionConsumer implements AutoCloseable {
 
     public TransactionConsumer(Properties kafkaProperties) {
         this.consumer = new KafkaConsumer<>(kafkaProperties);
+        this.topicName = kafkaProperties.getProperty("transaction.topic.name");
     }
 
     /**
      * Вычитывает сообщения-транзакции из брокера сообщений
      */
     public void consume() {
-        consumer.subscribe(Collections.singletonList(TOPIC));
+        consumer.subscribe(Collections.singletonList(topicName));
 
         try {
             while (true) {
