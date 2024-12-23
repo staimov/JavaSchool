@@ -60,7 +60,7 @@ public class TransactionConsumer implements AutoCloseable {
         } catch (WakeupException e) {
             // poll прерван с помощью wakeup, игнорируем для корректного завершения
         } catch (Exception e) {
-            logger.error("Неожиданная ошибка потребителя: {}", e.getMessage());
+            logger.error("Неожиданная ошибка потребителя", e);
             throw new RuntimeException(e);
         } finally {
             try {
@@ -78,8 +78,7 @@ public class TransactionConsumer implements AutoCloseable {
 
     private static void onCommitComplete(Map<TopicPartition, OffsetAndMetadata> offsets, Exception exception) {
         if (exception != null) {
-            logger.error("Ошибка асинхронного коммита offset={}: {}",
-                    offsets, exception.getMessage());
+            logger.error("Ошибка асинхронного коммита offset={}", offsets, exception);
         }
     }
 

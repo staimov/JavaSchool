@@ -47,7 +47,7 @@ public class TransactionDeserializer implements Deserializer<TransactionDto> {
             validator.validate(jsonString);
             return objectMapper.readValue(jsonString, TransactionDto.class);
         } catch (Exception e) {
-            logger.error("Ошибка десериализации: {}", e.getMessage());
+            logger.error("Ошибка десериализации", e);
             return null;
         }
     }

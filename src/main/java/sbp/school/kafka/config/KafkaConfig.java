@@ -18,7 +18,7 @@ public class KafkaConfig {
         try {
             properties.load(KafkaConfig.class.getClassLoader().getResourceAsStream(PROPERTIES_FILENAME));
         } catch (Exception e) {
-            logger.error("Ошибка загрузки конфигурации: {}", e.getMessage());
+            logger.error("Ошибка загрузки конфигурации", e);
             throw new RuntimeException(e);
         }
     }
