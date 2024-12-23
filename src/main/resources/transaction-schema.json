@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "number",
+      "minimum": 0
+    },
+    "operationType": {
+      "type": "string",
+      "enum": ["DEPOSIT", "WITHDRAWAL", "TRANSFER"]
+    },
+    "amount": {
+      "type": "number",
+      "minimum": 0
+    },
+    "account": {
+      "type": "string",
+      "minLength": 1
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?([+-]\\d{2}:?\\d{2}|Z)$"
+    }
+  },
+  "required": ["id", "operationType", "amount", "account", "time"]
+}
