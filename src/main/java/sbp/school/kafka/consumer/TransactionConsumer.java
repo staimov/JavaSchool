@@ -89,7 +89,7 @@ public class TransactionConsumer implements AutoCloseable {
             logger.warn("Пропуск невалидного сообщения: offset={}", record.offset());
             return;
         }
-        logger.info("Получена и обработана валидная транзакция: {}, offset={}", transaction, record.offset());
+        logger.debug("Получена и обработана валидная транзакция: {}, offset={}", transaction, record.offset());
     }
 
     /**

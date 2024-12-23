@@ -2,12 +2,16 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <PatternLayout disableAnsi="false"
+                           pattern="%d{HH:mm:ss.SSS} %highlight{[%t] %-5level %logger{36} - %msg%n}{FATAL=magenta, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue, TRACE=white}"/>
         </Console>
     </Appenders>
     <Loggers>
         <Root level="info">
             <AppenderRef ref="Console"/>
         </Root>
+        <Logger name="sbp.school" level="TRACE" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
     </Loggers>
 </Configuration>
