@@ -47,4 +47,4 @@
 
 ### Запуск
 
-[Команды запуска Kafka для Windows](kafka-commands.md)
+[Команды запуска и настройки Kafka](kafka-commands.md)
