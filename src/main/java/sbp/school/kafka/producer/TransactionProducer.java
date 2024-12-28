@@ -91,7 +91,6 @@ public class TransactionProducer extends Thread implements AutoCloseable {
      */
     public void close() {
         logger.info("Отправка неотправленных сообщений и закрытие производителя транзакций");
-        producer.flush();
         producer.close();
     }
 }

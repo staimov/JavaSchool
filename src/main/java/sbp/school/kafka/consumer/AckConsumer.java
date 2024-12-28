@@ -1,9 +1,6 @@
 package sbp.school.kafka.consumer;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
@@ -19,7 +16,6 @@ import java.util.*;
  */
 public class AckConsumer extends Thread implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(AckConsumer.class);
-    public static final String GROUP_ID_KEY = "group.id";
 
     private final String topicName;
 
@@ -32,10 +28,11 @@ public class AckConsumer extends Thread implements AutoCloseable {
     public AckConsumer(KafkaConfig config, TransactionProducer transactionProducer) {
         Properties consumerProperties = config.getTransactionAckConsumerProperties();
 
-        // Так как коллекцию неподтвержденных транзакций мы храним в памяти экземпляра приложения,
-        // то требуется индивидуальный group.id потребителя подтверждений для каждого экземпляра приложения
-        consumerProperties.setProperty(GROUP_ID_KEY,
-                consumerProperties.getProperty(GROUP_ID_KEY) + "-" + UUID.randomUUID());
+        // Так как коллекцию неподтвержденных транзакций мы храним в экземпляре продюсера транзакций,
+        // то требуется индивидуальный group.id для потребителя подтверждений,
+        // соответствующего данному экземпляру продюсера транзакций
+        consumerProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG,
+                consumerProperties.getProperty(ConsumerConfig.GROUP_ID_CONFIG) + "-" + UUID.randomUUID());
 
         this.consumer = new KafkaConsumer<>(consumerProperties);
         this.topicName = config.getProperty("transaction.ack.topic.name");
@@ -66,8 +63,7 @@ public class AckConsumer extends Thread implements AutoCloseable {
                 }
 
                 if (!currentOffsets.isEmpty()) {
-                    consumer.commitAsync((offsets, exception) ->
-                            onCommitComplete(offsets, exception));
+                    consumer.commitAsync(this::onCommitComplete);
                 }
             }
         } catch (WakeupException e) {
@@ -104,7 +100,7 @@ public class AckConsumer extends Thread implements AutoCloseable {
                     record.value(), record.offset());
             return;
         }
-        if (ackId == null || !transactionProducer.getUnackedTransactions().containsKey(ackId)) {
+        if (!transactionProducer.getUnackedTransactions().containsKey(ackId)) {
             logger.warn("Пропущено неизвестное подтверждение: id={}, offset={}", ackId, record.offset());
         } else {
             transactionProducer.getUnackedTransactions().remove(ackId);
