@@ -21,12 +21,12 @@ public class TransactionPartitioner implements Partitioner {
     /**
      * Вычисляет и возвращает номер партиции
      *
-     * @param topic имя топика
-     * @param key ключ
-     * @param keyBytes ключ в виде массива байтов
-     * @param value значение
+     * @param topic      имя топика
+     * @param key        ключ
+     * @param keyBytes   ключ в виде массива байтов
+     * @param value      значение
      * @param valueBytes значение в виде массива байтов
-     * @param cluster кластер
+     * @param cluster    кластер
      * @return номер партиции
      */
     @Override
@@ -42,7 +42,7 @@ public class TransactionPartitioner implements Partitioner {
             throw new RuntimeException(errorMessage);
         }
 
-        return  ((TransactionDto) value).getOperationType().ordinal();
+        return ((TransactionDto) value).getOperationType().ordinal();
     }
 
     @Override

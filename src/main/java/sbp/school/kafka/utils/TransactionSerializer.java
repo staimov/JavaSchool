@@ -32,7 +32,7 @@ public class TransactionSerializer implements Serializer<TransactionDto> {
     /**
      * Сериализует объект транзакции
      *
-     * @param topic имя топика
+     * @param topic       имя топика
      * @param transaction объект транзакции
      * @return результат сериализации в виде массива байтов
      */
