@@ -1,6 +1,8 @@
-package sbp.school.kafka.dto;
+package sbp.school.kafka.transaction;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,7 +14,7 @@ public final class TransactionDto {
     /**
      * Идентификатор
      */
-    private final long id;
+    private final String id;
     /**
      * Тип операции
      */
@@ -33,7 +35,14 @@ public final class TransactionDto {
             timezone = "UTC")
     private final LocalDateTime time;
 
-    public TransactionDto(long id, OperationType operationType, BigDecimal amount, String account, LocalDateTime time) {
+    @JsonCreator
+    public TransactionDto(
+            @JsonProperty("id") String id,
+            @JsonProperty("operationType") OperationType operationType,
+            @JsonProperty("amount") BigDecimal amount,
+            @JsonProperty("account") String account,
+            @JsonProperty("time") LocalDateTime time
+    ) {
         this.id = id;
         this.operationType = operationType;
         this.amount = amount;
@@ -41,7 +50,7 @@ public final class TransactionDto {
         this.time = time;
     }
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 

@@ -1,4 +1,4 @@
-package sbp.school.kafka.dto;
+package sbp.school.kafka.transaction;
 
 /**
  * Тип операции

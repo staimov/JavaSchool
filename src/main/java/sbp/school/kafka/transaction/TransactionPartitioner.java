@@ -1,4 +1,4 @@
-package sbp.school.kafka.utils;
+package sbp.school.kafka.transaction;
 
 
 import org.apache.kafka.clients.producer.Partitioner;
@@ -6,8 +6,6 @@ import org.apache.kafka.common.Cluster;
 import org.apache.kafka.common.PartitionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sbp.school.kafka.dto.OperationType;
-import sbp.school.kafka.dto.TransactionDto;
 
 import java.util.List;
 import java.util.Map;
