@@ -20,7 +20,7 @@ import static sbp.school.kafka.utils.IntervalHelper.getIntervalKey;
  */
 public class TransactionProducer extends Thread implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(TransactionProducer.class);
-    public static final String PRODUCER_ID_HEADER_KEY = "transaction-id";
+    public static final String PRODUCER_ID_HEADER_KEY = "producer-id";
 
     private final String topicName;
 
