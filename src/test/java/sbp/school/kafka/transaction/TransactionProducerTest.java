@@ -10,9 +10,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sbp.school.kafka.ack.AckDto;
+import sbp.school.kafka.ack.model.AckDto;
 import sbp.school.kafka.config.KafkaConfig;
-import sbp.school.kafka.ack.AckConsumer;
+import sbp.school.kafka.ack.service.AckConsumer;
+import sbp.school.kafka.transaction.model.OperationType;
+import sbp.school.kafka.transaction.model.TransactionDto;
+import sbp.school.kafka.transaction.service.TransactionProducer;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -21,7 +24,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static sbp.school.kafka.transaction.TransactionProducer.PRODUCER_ID_HEADER_KEY;
+import static sbp.school.kafka.transaction.service.TransactionProducer.PRODUCER_ID_HEADER_KEY;
 
 public class TransactionProducerTest {
     private static final Logger logger = LoggerFactory.getLogger(TransactionProducerTest.class);

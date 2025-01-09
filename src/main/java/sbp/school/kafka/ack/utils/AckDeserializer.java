@@ -1,9 +1,10 @@
-package sbp.school.kafka.ack;
+package sbp.school.kafka.ack.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sbp.school.kafka.ack.model.AckDto;
 
 import java.nio.charset.StandardCharsets;
 

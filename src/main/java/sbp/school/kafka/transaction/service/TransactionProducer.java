@@ -1,10 +1,11 @@
-package sbp.school.kafka.transaction;
+package sbp.school.kafka.transaction.service;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sbp.school.kafka.config.KafkaConfig;
+import sbp.school.kafka.transaction.model.TransactionDto;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -12,8 +13,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static sbp.school.kafka.utils.ChecksumHelper.calculateChecksum;
-import static sbp.school.kafka.utils.IntervalHelper.getIntervalKey;
+import static sbp.school.kafka.common.utils.ChecksumHelper.calculateChecksum;
+import static sbp.school.kafka.common.utils.IntervalHelper.getIntervalKey;
 
 /**
  * Класс отправки транзакций в брокер сообщений

@@ -1,4 +1,4 @@
-package sbp.school.kafka.transaction;
+package sbp.school.kafka.transaction.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;

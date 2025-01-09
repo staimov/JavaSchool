@@ -1,4 +1,4 @@
-package sbp.school.kafka.ack;
+package sbp.school.kafka.ack.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

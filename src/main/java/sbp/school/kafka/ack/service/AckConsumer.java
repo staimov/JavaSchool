@@ -1,17 +1,18 @@
-package sbp.school.kafka.ack;
+package sbp.school.kafka.ack.service;
 
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sbp.school.kafka.ack.model.AckDto;
 import sbp.school.kafka.config.KafkaConfig;
-import sbp.school.kafka.transaction.TransactionProducer;
+import sbp.school.kafka.transaction.service.TransactionProducer;
 
 import java.time.Duration;
 import java.util.*;
 
-import static sbp.school.kafka.transaction.TransactionProducer.PRODUCER_ID_HEADER_KEY;
+import static sbp.school.kafka.transaction.service.TransactionProducer.PRODUCER_ID_HEADER_KEY;
 
 /**
  * Класс потребитель подтверждений обработки транзакций из брокера сообщений

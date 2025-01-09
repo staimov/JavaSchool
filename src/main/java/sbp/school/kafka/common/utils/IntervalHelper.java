@@ -1,4 +1,4 @@
-package sbp.school.kafka.utils;
+package sbp.school.kafka.common.utils;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
