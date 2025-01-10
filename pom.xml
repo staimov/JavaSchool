@@ -7,7 +7,36 @@
     <groupId>sbp</groupId>
     <artifactId>Lecture2</artifactId>
     <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <apache-kafka.version>3.3.2</apache-kafka.version>
+        <slf4j.version>1.7.36</slf4j.version>
+    </properties>
+
+
     <dependencies>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${apache-kafka.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>connect-api</artifactId>
+            <version>${apache-kafka.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>connect-json</artifactId>
+            <version>${apache-kafka.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
