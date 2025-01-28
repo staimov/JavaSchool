@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import sbp.school.kafka.ack.model.AckDto;
 import sbp.school.kafka.config.KafkaConfig;
 import sbp.school.kafka.transaction.service.TransactionProducer;
+import sbp.school.kafka.transaction.service.TransactionStorage;
 
 import java.time.Duration;
 import java.util.*;
@@ -28,7 +29,9 @@ public class AckConsumer extends Thread implements AutoCloseable {
 
     private final Map<TopicPartition, OffsetAndMetadata> currentOffsets = new HashMap<>();
 
-    public AckConsumer(KafkaConfig config, TransactionProducer transactionProducer) {
+    private final TransactionStorage storage;
+
+    public AckConsumer(KafkaConfig config, TransactionProducer transactionProducer, TransactionStorage storage) {
         Properties consumerProperties = config.getTransactionAckConsumerProperties();
 
         // Так как коллекцию неподтвержденных отправленных транзакций мы храним в экземпляре продюсера транзакций,
@@ -40,6 +43,7 @@ public class AckConsumer extends Thread implements AutoCloseable {
         this.consumer = new KafkaConsumer<>(consumerProperties);
         this.topicName = config.getProperty("transaction.ack.topic.name");
         this.transactionProducer = transactionProducer;
+        this.storage = storage;
     }
 
     /**
@@ -109,14 +113,14 @@ public class AckConsumer extends Thread implements AutoCloseable {
             }
 
             String ackChecksum = ack.getChecksum();
-            String sentChecksum = transactionProducer.getSentChecksum().get(intervalKey);
+            String sentChecksum = storage.getSentCheckSum(intervalKey);
 
             if (sentChecksum == null) {
                 logger.warn("Получено подтверждение, однако в нем ключ несуществующего интервала: " +
                                 "ackChecksum={}, sentChecksum=null, intervalKey={}, offset={}",
                         ackChecksum, intervalKey, record.offset());
             } else if (ackChecksum.equals(sentChecksum)) {
-                transactionProducer.cleanupInterval(intervalKey);
+                storage.cleanupInterval(intervalKey);
                 logger.debug("Получено и обработано подтверждение: intervalKey={}, offset={}", intervalKey, record.offset());
             } else {
                 logger.warn("Получено подтверждение, однако контрольная сумма не совпадает: " +

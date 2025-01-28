@@ -15,7 +15,9 @@ import sbp.school.kafka.config.KafkaConfig;
 import sbp.school.kafka.ack.service.AckConsumer;
 import sbp.school.kafka.transaction.model.OperationType;
 import sbp.school.kafka.transaction.model.TransactionDto;
+import sbp.school.kafka.transaction.service.MemoryTransactionStorage;
 import sbp.school.kafka.transaction.service.TransactionProducer;
+import sbp.school.kafka.transaction.service.TransactionStorage;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -31,11 +33,13 @@ public class TransactionProducerTest {
 
     private KafkaConfig kafkaConfig;
     private TransactionProducer producer;
+    private TransactionStorage storage;
 
     @BeforeEach
     void setUp() {
         kafkaConfig = new KafkaConfig();
-        producer = new TransactionProducer(kafkaConfig);
+        storage = new MemoryTransactionStorage();
+        producer = new TransactionProducer(kafkaConfig, storage);
     }
 
     @AfterEach
@@ -60,7 +64,7 @@ public class TransactionProducerTest {
     @Test
     void testSendMultipleTransactions_And_WaitForAcks() {
         ScheduledExecutorService scheduler = null;
-        try (AckConsumer consumer = new AckConsumer(kafkaConfig, producer)
+        try (AckConsumer consumer = new AckConsumer(kafkaConfig, producer, storage)
         ) {
             Runtime.getRuntime().addShutdownHook(new Thread(consumer::close));
 
@@ -84,13 +88,13 @@ public class TransactionProducerTest {
             Thread.sleep(5000);
 
             // Запускаем поток отправки тестовых подтверждений (валидных и невалидных) в топик подтверждений
-            sendTestAcks(producer.getProducerId(), producer.getSentChecksum());
+            sendTestAcks(producer.getProducerId(), storage.getSentChecksumMap());
 
             // Просто ждём получения подтверждения для всех отправленных транзакций
-            while (!producer.getSentTransactions().isEmpty() || !producer.getTransactionsSendInProgress().isEmpty()) {
+            while (!storage.isSentTransactionsEmpty() || !storage.isTransactionsSendInProgressEmpty()) {
                 Thread.sleep(100);
             }
-            logger.info("Для всех отправленных транзакций получены подтверждения!");
+            logger.info("Для всех отправленных транзакций получены подтверждения, либо превышено количество переотправок!");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -121,7 +125,7 @@ public class TransactionProducerTest {
             Random random = new Random();
             int outcome = random.nextInt(101);
             // задаем вероятность получения подтверждения с верной контрольной суммой
-            if (outcome < 50) {
+            if (outcome < 10) {
                 value = entry.getValue();
             } else {
                 // не верная контрольная сумма

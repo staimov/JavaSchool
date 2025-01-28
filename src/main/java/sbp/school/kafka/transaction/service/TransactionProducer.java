@@ -10,10 +10,8 @@ import sbp.school.kafka.transaction.model.TransactionDto;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static sbp.school.kafka.common.utils.ChecksumHelper.calculateChecksum;
 import static sbp.school.kafka.common.utils.IntervalHelper.getIntervalKey;
 
 /**
@@ -29,21 +27,21 @@ public class TransactionProducer extends Thread implements AutoCloseable {
 
     private final Duration ackTimeout;
 
-    private final Duration checksumInterval;
+    private final Duration checksumIntervalDuration;
+
+    private final int retryMaxCount;
 
     private final String producerId = UUID.randomUUID().toString();
 
-    private final Map<Long, List<TransactionDto>> sentTransactions = new ConcurrentHashMap<>();
+    private final TransactionStorage storage;
 
-    private final Map<Long, String> sentChecksum = new ConcurrentHashMap<>();
-
-    private final Map<String, TransactionDto> transactionsSendInProgress = new ConcurrentHashMap<>();
-
-    public TransactionProducer(KafkaConfig config) {
+    public TransactionProducer(KafkaConfig config, TransactionStorage storage) {
         this.producer = new KafkaProducer<>(config.getTransactionProducerProperties());
         this.topicName = config.getProperty("transaction.topic.name");
         this.ackTimeout = Duration.parse(config.getProperty("transaction.ack.timeout"));
-        this.checksumInterval = Duration.parse(config.getProperty("transaction.checksum.interval"));
+        this.checksumIntervalDuration = Duration.parse(config.getProperty("transaction.checksum.interval"));
+        this.retryMaxCount = Integer.parseInt(config.getProperty("transaction.retry.maxcount"));
+        this.storage = storage;
     }
 
     /**
@@ -54,19 +52,18 @@ public class TransactionProducer extends Thread implements AutoCloseable {
     public void sendTransaction(TransactionDto transaction) {
         ProducerRecord<String, TransactionDto> record = new ProducerRecord<>(topicName, transaction);
         record.headers().add(PRODUCER_ID_HEADER_KEY, producerId.getBytes());
-        transactionsSendInProgress.put(transaction.getId(), transaction);
+        storage.putTransactionSendInProgress(transaction);
         producer.send(record, (metadata, exception) -> {
             if (exception != null) {
                 logger.error("Ошибка отправки сообщения: partition={}, offset={}\"",
                         metadata.partition(), metadata.offset(), exception);
             } else {
-                long intervalKey = getIntervalKey(transaction.getTime(), checksumInterval);
-                sentTransactions.computeIfAbsent(intervalKey, k -> new ArrayList<>()).add(transaction);
-                sentChecksum.put(intervalKey, calculateChecksum(
-                        sentTransactions.get(intervalKey).stream().map(TransactionDto::getId).collect(Collectors.toList())));
+                long intervalKey = getIntervalKey(transaction.getTime(), checksumIntervalDuration);
+                storage.putSentTransaction(intervalKey, transaction);
+                storage.updateCheckSum(intervalKey);
                 logger.debug("Сообщение успешно отправлено: id={}, intervalKey={}, checkSum={}, partition={}, offset={}",
-                        transaction.getId(), intervalKey, sentChecksum.get(intervalKey), metadata.partition(), metadata.offset());
-                transactionsSendInProgress.remove(transaction.getId());
+                        transaction.getId(), intervalKey, storage.getSentCheckSum(intervalKey), metadata.partition(), metadata.offset());
+                storage.removeTransactionSendInProgress(transaction.getId());
             }
         });
     }
@@ -75,7 +72,7 @@ public class TransactionProducer extends Thread implements AutoCloseable {
      * Делает переотправку для пачек транзакций, для которых истек таймаут получения подтверждения
      */
     public void retrySendTransactions() {
-        if (!sentTransactions.isEmpty()) {
+        if (!storage.isSentTransactionsEmpty()) {
             logger.trace("Проверка необходимости переотправки");
         } else {
             return;
@@ -83,27 +80,40 @@ public class TransactionProducer extends Thread implements AutoCloseable {
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime timeoutThresholdTime = now.minus(ackTimeout);
-        Long timeoutThresholdIntervalKey = getIntervalKey(timeoutThresholdTime, checksumInterval);
+        Long timeoutThresholdIntervalKey = getIntervalKey(timeoutThresholdTime, checksumIntervalDuration);
 
-        Set<Long> internalKeysToRetry = sentTransactions.keySet().stream()
+        Set<Long> intervalKeysToRetry = storage.getSentTransactionIntervalKeys().stream()
                 .filter(intervalKey -> intervalKey < timeoutThresholdIntervalKey)
                 .collect(Collectors.toSet());
 
-        for (Long intervalKey : internalKeysToRetry) {
-            // TODO: возможно надо еще ограничивать число повторных отправок
-            retryTransactionsForInterval(intervalKey, now);
-            cleanupInterval(intervalKey);
-            logger.debug("Выполнена переотправка пачки транзакций: ex-intervalKey={}", intervalKey);
+        for (Long intervalKey : intervalKeysToRetry) {
+            if (retryTransactionsForInterval(intervalKey, now) > 0) {
+                logger.debug("Выполнена переотправка пачки транзакций: ex-intervalKey={}", intervalKey);
+            }
+            storage.cleanupInterval(intervalKey);
         }
     }
 
     private int retryTransactionsForInterval(Long intervalKey, LocalDateTime time) {
-        List<TransactionDto> transactions = sentTransactions.get(intervalKey);
+        List<TransactionDto> transactions = storage.getSentTransactions(intervalKey);
+        int transactionsSentCount = 0;
+
         for (TransactionDto transaction : transactions) {
-            TransactionDto retryTransaction = createRetryTransaction(transaction, time);
-            sendTransaction(retryTransaction);
+            String transactionId = transaction.getId();
+            int retryCount = storage.getRetryCount(transactionId);
+            if (retryCount < retryMaxCount) {
+                storage.putRetryCount(transactionId, ++retryCount);
+                TransactionDto retryTransaction = createRetryTransaction(transaction, time);
+                sendTransaction(retryTransaction);
+                ++transactionsSentCount;
+            } else {
+                logger.warn("Превышено количество повторных отправок для транзакции id={}, retryCount={} " +
+                                "(больше эта транзакция переотправляться не будет)",
+                        transactionId, retryCount);
+            }
         }
-        return transactions.size();
+
+        return transactionsSentCount;
     }
 
     private TransactionDto createRetryTransaction(TransactionDto original, LocalDateTime time) {
@@ -116,30 +126,6 @@ public class TransactionProducer extends Thread implements AutoCloseable {
         );
     }
 
-    /**
-     * Возвращает карту отправленных транзакций
-     */
-    public Map<Long, List<TransactionDto>> getSentTransactions() {
-        return sentTransactions;
-    }
-
-    /**
-     * Возвращает карту контрольных сумм отправленных транзакций
-     */
-    public Map<Long, String> getSentChecksum() {
-        return sentChecksum;
-    }
-
-    /**
-     * Очищает историю об отправленных транзакциях для заданного интервала
-     *
-     * @param intervalKey ключ интервала
-     */
-    public void cleanupInterval(Long intervalKey) {
-        sentTransactions.remove(intervalKey);
-        sentChecksum.remove(intervalKey);
-    }
-
     @Override
     public void run() {
         retrySendTransactions();
@@ -150,13 +136,6 @@ public class TransactionProducer extends Thread implements AutoCloseable {
      */
     public String getProducerId() {
         return producerId;
-    }
-
-    /**
-     * Возвращает карту транзакций, которые находятся в процессе отправки, но еще не записались в брокер сообщений
-     */
-    public Map<String, TransactionDto> getTransactionsSendInProgress() {
-        return transactionsSendInProgress;
     }
 
     /**
