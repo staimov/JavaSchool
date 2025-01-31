@@ -12,8 +12,8 @@ public final class AckDto {
     private final String checksum;
 
     @JsonCreator
-    public AckDto(@JsonProperty("intervalId") String intervalId, @JsonProperty("checksum") String checksum) {
-        this.intervalKey = intervalId;
+    public AckDto(@JsonProperty("intervalKey") String intervalKey, @JsonProperty("checksum") String checksum) {
+        this.intervalKey = intervalKey;
         this.checksum = checksum;
     }
 
