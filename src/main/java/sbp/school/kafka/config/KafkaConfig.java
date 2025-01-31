@@ -60,20 +60,20 @@ public class KafkaConfig {
     }
 
     /**
-     * Возвращает свойств производителя транзакций
+     * Возвращает свойств потребителя транзакций
      *
-     * @return свойств производителя транзакций
+     * @return свойств потребителя транзакций
      */
-    public Properties getTransactionProducerProperties() {
-        return getProperties("transaction.producer.");
+    public Properties getTransactionConsumerProperties() {
+        return getProperties("transaction.consumer.");
     }
 
     /**
-     * Возвращает свойств потребителя подтверждений
+     * Возвращает свойств производителя подтверждений
      *
-     * @return свойств потребителя подтверждений
+     * @return свойств производителя подтверждений
      */
-    public Properties getTransactionAckConsumerProperties() {
-        return getProperties("transaction.ack.consumer.");
+    public Properties getTransactionAckProducerProperties() {
+        return getProperties("transaction.ack.producer.");
     }
 }

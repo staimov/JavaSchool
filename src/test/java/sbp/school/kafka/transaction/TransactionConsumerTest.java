@@ -2,6 +2,8 @@ package sbp.school.kafka.transaction;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -10,87 +12,80 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sbp.school.kafka.ack.AckDto;
+import sbp.school.kafka.ack.service.AckProducer;
 import sbp.school.kafka.config.KafkaConfig;
-import sbp.school.kafka.ack.AckConsumer;
+import sbp.school.kafka.transaction.model.OperationType;
+import sbp.school.kafka.transaction.model.TransactionDto;
+import sbp.school.kafka.transaction.service.MemoryTransactionStorage;
+import sbp.school.kafka.transaction.service.TransactionConsumer;
+import sbp.school.kafka.transaction.service.TransactionStorage;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static sbp.school.kafka.transaction.TransactionProducer.PRODUCER_ID_HEADER_KEY;
+import static sbp.school.kafka.transaction.service.TransactionConsumer.PRODUCER_ID_HEADER_KEY;
 
-public class TransactionProducerTest {
-    private static final Logger logger = LoggerFactory.getLogger(TransactionProducerTest.class);
+public class TransactionConsumerTest {
+    private static final Logger logger = LoggerFactory.getLogger(TransactionConsumerTest.class);
 
     private KafkaConfig kafkaConfig;
-    private TransactionProducer producer;
+
+    private TransactionConsumer consumer;
+
+    private AckProducer producer;
+
+    private String producerId;
+
+    private TransactionStorage storage;
 
     @BeforeEach
     void setUp() {
         kafkaConfig = new KafkaConfig();
-        producer = new TransactionProducer(kafkaConfig);
+        storage = new MemoryTransactionStorage();
+        consumer = new TransactionConsumer(kafkaConfig, storage);
+        producer = new AckProducer(kafkaConfig, storage);
+        producerId = UUID.randomUUID().toString();
     }
 
     @AfterEach
     void close() {
-        if (producer != null) {
-            producer.close();
+        if (consumer != null) {
+            consumer.close();
         }
     }
 
     @Test
-    void testSendMultipleTransactions_NoException() {
-        // Arrange
-        List<TransactionDto> transactions = createTestTransactions();
-
-        // Act & Assert
-        assertDoesNotThrow(() -> transactions.forEach(transaction -> {
-            producer.sendTransaction(transaction);
-            logger.info("Тестовая транзакция отправлена: {}", transaction);
-        }));
-    }
-
-    @Test
-    void testSendMultipleTransactions_And_WaitForAcks() {
+    void transactionsConsumeTest_And_SendAcks() throws InterruptedException {
         ScheduledExecutorService scheduler = null;
-        try (AckConsumer consumer = new AckConsumer(kafkaConfig, producer)
-        ) {
+        try {
             Runtime.getRuntime().addShutdownHook(new Thread(consumer::close));
 
             ExecutorService executor = Executors.newSingleThreadExecutor();
             scheduler = Executors.newScheduledThreadPool(1);
-            Duration retryPeriod = Duration.parse(kafkaConfig.getProperty("transaction.retry.period"));
-            Runnable retryTask = producer;
+            Duration ackPeriod = Duration.parse(kafkaConfig.getProperty("transaction.ack.period"));
+            Runnable ackTask = producer;
 
             executor.submit(consumer);
-            scheduler.scheduleAtFixedRate(retryTask, 0, retryPeriod.toMillis(), TimeUnit.MILLISECONDS);
+            scheduler.scheduleAtFixedRate(ackTask, 0, ackPeriod.toMillis(), TimeUnit.MILLISECONDS);
 
-            List<TransactionDto> transactionsToSend = createTestTransactions();
-            transactionsToSend.forEach(transaction -> {
-                producer.sendTransaction(transaction);
-                logger.info("Тестовая транзакция отправлена: {}", transaction);
-            });
+            sendTestTransactions();
 
             // Подождем немного, чтобы дать возможность тестовым транзакциям записаться в брокер сообщений,
-            // а потребителю подтверждений начать слушать
+            // а потребителю транзакций начать слушать
             logger.info("Ждем готовности...");
             Thread.sleep(5000);
 
-            // Запускаем поток отправки тестовых подтверждений (валидных и невалидных) в топик подтверждений
-            sendTestAcks(producer.getProducerId(), producer.getSentChecksum());
-
-            // Просто ждём получения подтверждения для всех отправленных транзакций
-            while (!producer.getSentTransactions().isEmpty() || !producer.getTransactionsSendInProgress().isEmpty()) {
+            // Просто ждём отправки подтверждения для всех полученных транзакций
+            while (!storage.isEmpty()) {
                 Thread.sleep(100);
             }
-            logger.info("Для всех отправленных транзакций получены подтверждения!");
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            logger.info("Для всех полученных транзакций подтверждения отправлены");
         } finally {
             if (scheduler != null) {
                 scheduler.shutdown();
@@ -98,53 +93,40 @@ public class TransactionProducerTest {
         }
     }
 
-    private void sendTestAcks(String producerId, Map<Long, String> sentChecksums) {
+    private void sendTestTransactions() {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                kafkaConfig.getProperty("transaction.ack.consumer.bootstrap.servers"));
+                kafkaConfig.getProperty("transaction.consumer.bootstrap.servers"));
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
                 org.apache.kafka.common.serialization.StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
                 org.apache.kafka.common.serialization.StringSerializer.class.getName());
-        String topicName = kafkaConfig.getProperty("transaction.ack.topic.name");
-        KafkaProducer<String, String> ackProducer = new KafkaProducer<>(props);
+        String topicName = kafkaConfig.getProperty("transaction.topic.name");
+        KafkaProducer<String, String> transactionProducer = new KafkaProducer<>(props);
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        objectMapper.registerModule(new JavaTimeModule());
 
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
-        Runnable producerTask = () -> {
-            Map.Entry<Long, String> entry = sentChecksums.entrySet().iterator().next();
-            Long key = entry.getKey();
-            String value;
-            Random random = new Random();
-            int outcome = random.nextInt(101);
-            // задаем вероятность получения подтверждения с верной контрольной суммой
-            if (outcome < 50) {
-                value = entry.getValue();
-            } else {
-                // не верная контрольная сумма
-                value = "f".repeat(32);
-            }
-            AckDto ack = new AckDto(key.toString(), value);
-            ObjectMapper objectMapper = new ObjectMapper();
-            String jsonString;
+        List<TransactionDto> testTransactions = createTestTransactions();
+        String jsonString;
+        for (TransactionDto transaction : testTransactions) {
             try {
-                jsonString = objectMapper.writeValueAsString(ack);
+                jsonString = objectMapper.writeValueAsString(transaction);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
             ProducerRecord<String, String> record = new ProducerRecord<>(topicName, null, jsonString);
             record.headers().add(PRODUCER_ID_HEADER_KEY, producerId.getBytes());
 
-            ackProducer.send(record, (metadata, exception) -> {
+            transactionProducer.send(record, (metadata, exception) -> {
                 if (exception == null) {
-                    logger.trace("Тестовое подтверждение {} отправлено в топик {}, offset={}", ack, topicName, metadata.offset());
+                    logger.trace("Тестовая транзакция {} отправлена в топик {}, producerId={}, offset={}",
+                            transaction, topicName, producerId, metadata.offset());
                 } else {
-                    logger.error("Ошибка отправки тестового подтверждения", exception);
+                    logger.error("Ошибка отправки тестовой транзакции", exception);
                 }
             });
-        };
-
-        scheduler.scheduleAtFixedRate(producerTask, 0, 6, TimeUnit.SECONDS);
+        }
     }
 
     private static List<TransactionDto> createTestTransactions() {
