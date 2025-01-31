@@ -1,4 +1,4 @@
-package sbp.school.kafka.utils;
+package sbp.school.kafka.transaction.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -6,7 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sbp.school.kafka.dto.TransactionDto;
+import sbp.school.kafka.transaction.model.TransactionDto;
 
 import java.nio.charset.StandardCharsets;
 
