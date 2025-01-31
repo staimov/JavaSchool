@@ -1,4 +1,4 @@
-package sbp.school.kafka.utils;
+package sbp.school.kafka.transaction.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
