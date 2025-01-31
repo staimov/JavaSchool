@@ -87,6 +87,47 @@ public class TransactionProducerTest {
             logger.info("Ждем готовности...");
             Thread.sleep(5000);
 
+            // Просто ждём получения подтверждения для всех отправленных транзакций
+            while (!storage.isSentTransactionsEmpty() || !storage.isTransactionsSendInProgressEmpty()) {
+                Thread.sleep(100);
+            }
+            logger.info("Для всех отправленных транзакций получены подтверждения, либо превышено количество переотправок!");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } finally {
+            if (scheduler != null) {
+                scheduler.shutdown();
+            }
+        }
+    }
+
+    @Test
+    void testSendMultipleTransactions_And_WaitForTestAcks() {
+        ScheduledExecutorService scheduler = null;
+        try (AckConsumer consumer = new AckConsumer(kafkaConfig, producer, storage)
+        ) {
+            Runtime.getRuntime().addShutdownHook(new Thread(consumer::close));
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            scheduler = Executors.newScheduledThreadPool(1);
+            Duration retryPeriod = Duration.parse(kafkaConfig.getProperty("transaction.retry.period"));
+            Runnable retryTask = producer;
+
+            executor.submit(consumer);
+            scheduler.scheduleAtFixedRate(retryTask, 0, retryPeriod.toMillis(), TimeUnit.MILLISECONDS);
+
+            List<TransactionDto> transactionsToSend = createTestTransactions();
+            transactionsToSend.forEach(transaction -> {
+                producer.sendTransaction(transaction);
+                logger.info("Тестовая транзакция отправлена: {}", transaction);
+            });
+
+            // Подождем немного, чтобы дать возможность тестовым транзакциям записаться в брокер сообщений,
+            // а потребителю подтверждений начать слушать
+            logger.info("Ждем готовности...");
+            Thread.sleep(5000);
+
             // Запускаем поток отправки тестовых подтверждений (валидных и невалидных) в топик подтверждений
             sendTestAcks(producer.getProducerId(), storage.getSentChecksumMap());
 
