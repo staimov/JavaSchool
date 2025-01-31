@@ -6,11 +6,8 @@ docker compose up -d
 docker exec -it kafka bash
 
 # Create a topic to store your events in new terminal
-/bin/kafka-topics --create --topic transaction-topic --bootstrap-server kafka:9092
+/bin/kafka-topics --create --topic transaction-topic --bootstrap-server kafka:9092 --partitions 3
 /bin/kafka-topics --create --topic transaction-ack-topic --bootstrap-server kafka:9092
-
-# Alter partition count for topic
-/bin/kafka-topics --alter --topic transaction-topic --partitions 3 --bootstrap-server kafka:9092
 
 # Show topic info
 /bin/kafka-topics --describe --topic transaction-topic --bootstrap-server kafka:9092
