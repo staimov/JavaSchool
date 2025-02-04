@@ -46,7 +46,7 @@ Content-Type: application/json
 }
 ```
 
-Add bew records to transactions table in jdbc:postgresql://localhost:5432/transactions_db database.
+Add new records to transactions table in jdbc:postgresql://localhost:5432/transactions_db database.
 
 ```shell
 # Output dump file 
