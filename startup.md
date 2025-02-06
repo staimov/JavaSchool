@@ -19,13 +19,14 @@ Content-Type: application/json
 {
   "name": "load-transactions",
   "config": {
-    "connector.class": "sbp.school.kafka.connect.TransactionDbStreamSourceConnector",
+    "connector.class": "sbp.school.kafka.connect.TransactionDbSourceConnector",
     "tasks.max": "1",
     "db.url": "jdbc:postgresql://postgres:5432/transactions_db",
     "db.user": "postgres",
     "db.password": "postgres",
     "topic": "connect-transactions-topic",
-    "max.batch.size": 10
+    "max.batch.size": 10,
+    "poll.interval.ms": 5000
   }
 }
 ```

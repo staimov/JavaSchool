@@ -33,6 +33,8 @@ public class TransactionDbSourceTask extends SourceTask {
     private Connection connection;
     private String topic;
     private int maxBatchSize;
+    private int pollIntervalMs;
+    private long lastPollTime = 0;
 
     @Override
     public String version() {
@@ -51,6 +53,7 @@ public class TransactionDbSourceTask extends SourceTask {
             );
             topic = config.getString(TransactionDbConfig.TOPIC);
             maxBatchSize = config.getInt(TransactionDbConfig.MAX_BATCH_SIZE);
+            pollIntervalMs = config.getInt(TransactionDbConfig.POLL_INTERVAL_MS);
             logger.info("Запущена задача загрузки данных из БД");
         } catch (Exception e) {
             String message = "Ошибка запуска задачи загрузки данных из БД";
@@ -65,6 +68,12 @@ public class TransactionDbSourceTask extends SourceTask {
 
         try (PreparedStatement statement = connection.prepareStatement(
                 "SELECT * FROM transactions WHERE offset_key > ? ORDER BY offset_key LIMIT ?")) {
+
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastPollTime < pollIntervalMs) {
+                Thread.sleep(pollIntervalMs - (currentTime - lastPollTime));
+            }
+            lastPollTime = System.currentTimeMillis();
 
             Map<String, Object> offset = context.offsetStorageReader().offset(offsetKey(TRANSACTIONS_VALUE));
             long lastOffset = 0L;
@@ -103,6 +112,8 @@ public class TransactionDbSourceTask extends SourceTask {
             String message = "Ошибка загрузки данных из БД";
             logger.error(message, e);
             throw new RuntimeException(message, e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
 
         return records;
