@@ -66,14 +66,11 @@ public class TransactionDbSourceTask extends SourceTask {
         try (PreparedStatement statement = connection.prepareStatement(
                 "SELECT * FROM transactions WHERE offset_key > ? ORDER BY offset_key LIMIT ?")) {
 
-            Map<String, Object> sourcePartition = Collections.singletonMap(TABLE_KEY, TRANSACTIONS_VALUE);
-            Map<String, Object> offset = context.offsetStorageReader().offset(sourcePartition);
+            Map<String, Object> offset = context.offsetStorageReader().offset(offsetKey(TRANSACTIONS_VALUE));
             long lastOffset = 0L;
             if (offset != null && offset.get(OFFSET_FIELD) != null) {
                 lastOffset = (Long) offset.get(OFFSET_FIELD);
             }
-
-            logger.debug("Stored lastOffset={}", lastOffset);
 
             statement.setLong(1, lastOffset);
             statement.setInt(2, maxBatchSize);
@@ -90,15 +87,13 @@ public class TransactionDbSourceTask extends SourceTask {
 
                 long currentOffset = rs.getLong(OFFSET_FIELD);
 
-                logger.debug("New transaction loaded from database: {}, currentOffset={}", transactionDto, currentOffset);
+                logger.debug("Новая транзакция загружена из БД: {}, currentOffset={}", transactionDto, currentOffset);
 
                 Struct valueStruct = TransactionMapper.toStruct(transactionDto);
 
-                Map<String, Long> sourceOffset = Collections.singletonMap(OFFSET_FIELD, currentOffset);
-
                 records.add(new SourceRecord(
-                        sourcePartition,
-                        sourceOffset,
+                        offsetKey(TRANSACTIONS_VALUE),
+                        offsetValue(currentOffset),
                         topic,
                         TransactionMapper.SCHEMA,
                         valueStruct
@@ -111,6 +106,14 @@ public class TransactionDbSourceTask extends SourceTask {
         }
 
         return records;
+    }
+
+    private Map<String, Object> offsetKey(String tableName) {
+        return Collections.singletonMap(TABLE_KEY, tableName);
+    }
+
+    private Map<String, Object> offsetValue(Long pos) {
+        return Collections.singletonMap(OFFSET_FIELD, pos);
     }
 
     @Override
