@@ -23,7 +23,7 @@ Content-Type: application/json
     "db.user": "postgres",
     "db.password": "postgres",
     "topic": "connect-transactions-topic",
-    "max.batch.size": 10,
+    "max.poll.records": 10,
     "poll.interval.ms": 5000
   }
 }

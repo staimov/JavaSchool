@@ -10,7 +10,7 @@ public class TransactionDbConfig extends AbstractConfig {
     public static final String DB_USER = "db.user";
     public static final String DB_PASSWORD = "db.password";
     public static final String TOPIC = "topic";
-    public static final String MAX_BATCH_SIZE = "max.batch.size";
+    public static final String MAX_POLL_RECORDS = "max.poll.records";
     public static final String POLL_INTERVAL_MS = "poll.interval.ms";
 
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
@@ -30,10 +30,10 @@ public class TransactionDbConfig extends AbstractConfig {
                     ConfigDef.Type.STRING,
                     ConfigDef.Importance.HIGH,
                     "Target Kafka topic")
-            .define(MAX_BATCH_SIZE,
+            .define(MAX_POLL_RECORDS,
                     ConfigDef.Type.INT,
                     ConfigDef.Importance.HIGH,
-                    "Batch limit to read from database")
+                    "Max poll records")
             .define(POLL_INTERVAL_MS,
                     ConfigDef.Type.INT,
                     ConfigDef.Importance.HIGH,

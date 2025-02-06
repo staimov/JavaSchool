@@ -32,7 +32,7 @@ public class TransactionDbSourceTask extends SourceTask {
 
     private Connection connection;
     private String topic;
-    private int maxBatchSize;
+    private int maxPollRecords;
     private int pollIntervalMs;
     private long lastPollTime = 0;
 
@@ -52,7 +52,7 @@ public class TransactionDbSourceTask extends SourceTask {
                     config.getString(TransactionDbConfig.DB_PASSWORD)
             );
             topic = config.getString(TransactionDbConfig.TOPIC);
-            maxBatchSize = config.getInt(TransactionDbConfig.MAX_BATCH_SIZE);
+            maxPollRecords = config.getInt(TransactionDbConfig.MAX_POLL_RECORDS);
             pollIntervalMs = config.getInt(TransactionDbConfig.POLL_INTERVAL_MS);
             logger.info("Запущена задача загрузки данных из БД");
         } catch (Exception e) {
@@ -82,7 +82,7 @@ public class TransactionDbSourceTask extends SourceTask {
             }
 
             statement.setLong(1, lastOffset);
-            statement.setInt(2, maxBatchSize);
+            statement.setInt(2, maxPollRecords);
 
             ResultSet rs = statement.executeQuery();
             while (rs.next()) {
