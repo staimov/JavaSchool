@@ -1,0 +1,55 @@
+###
+GET http://localhost:8083
+Accept: application/json
+
+###
+GET http://localhost:8083/connector-plugins
+Accept: application/json
+
+###
+GET http://localhost:8083/connectors
+Accept: application/json
+
+###
+POST http://localhost:8083/connectors
+Content-Type: application/json
+
+{
+  "name": "load-transactions",
+  "config": {
+    "connector.class": "sbp.school.kafka.connect.TransactionDbSourceConnector",
+    "tasks.max": "1",
+    "db.url": "jdbc:postgresql://postgres:5432/transactions_db",
+    "db.user": "postgres",
+    "db.password": "postgres",
+    "topic": "connect-transactions-topic",
+    "max.poll.records": 10,
+    "poll.interval.ms": 5000
+  }
+}
+
+###
+POST http://localhost:8083/connectors
+Content-Type: application/json
+
+{
+  "name":"dump-transactions",
+  "config":
+  {
+    "connector.class":"sbp.school.kafka.connect.CustomFileStreamSinkConnector",
+    "file":"transactions.txt",
+    "topics":"connect-transactions-topic"
+  }
+}
+
+###
+DELETE http://localhost:8083/connectors/load-transactions
+
+###
+DELETE http://localhost:8083/connectors/dump-transactions
+
+###
+PUT http://localhost:8083/admin/loggers/root
+Content-Type: application/json
+
+{"level": "DEBUG"}
