@@ -19,6 +19,9 @@ IF [%1] EQU [] (
 	EXIT /B 1
 )
 
+rem Настройка JMX мониторинга
+set JMX_PORT=9999
+
 SetLocal
 IF ["%KAFKA_LOG4J_OPTS%"] EQU [""] (
     set KAFKA_LOG4J_OPTS=-Dlog4j.configuration=file:%~dp0../../config/log4j.properties
