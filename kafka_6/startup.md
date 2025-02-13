@@ -13,7 +13,7 @@ bin\windows\zookeeper-server-start.bat config\zookeeper.properties
 # Папка Kafka
 cd c:\kafka
 
-# Запуск первого брокера Kafka
+# Запуск брокера первого кластера Kafka
 bin\windows\kafka-server-start.bat config\server1.properties
 
 
@@ -22,7 +22,7 @@ bin\windows\kafka-server-start.bat config\server1.properties
 # Папка Kafka
 cd c:\kafka
 
-# Запуск первого брокера Kafka
+# Запуск брокера второго кластера Kafka
 bin\windows\kafka-server-start.bat config\server2.properties
 
 
