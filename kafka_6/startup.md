@@ -1,6 +1,13 @@
 ```shell 
 # Команды Windows
 
+# Скопируйте файлы
+# mirror-maker-consumer.properties
+# mirror-maker-producer.properties)
+# server1.properties
+# server2.properties
+# в папку c:\kafka\config
+
 # Папка Kafka
 cd c:\kafka
 
