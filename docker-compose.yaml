@@ -8,6 +8,11 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
+    healthcheck:
+      test: nc -z localhost 2181 || exit -1
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - kafka-net
     environment:
@@ -23,7 +28,8 @@ services:
       - "9092:9092"
       - "9093:9093"
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181

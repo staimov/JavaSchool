@@ -19,7 +19,6 @@ docker exec -it kafka bash
 # Read the messages
 /bin/kafka-console-consumer --topic transaction-topic --from-beginning --bootstrap-server kafka:9092
 
-# Write some ack messages into the ack topic
-/bin/kafka-console-producer --topic transaction-ack-topic --bootstrap-server kafka:9092
-#101
+# Exit from kafka container terminal
+exit
 ```
