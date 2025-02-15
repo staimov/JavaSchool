@@ -28,8 +28,6 @@ public class TransactionConsumer extends Thread implements AutoCloseable {
 
     private final Map<TopicPartition, OffsetAndMetadata> currentOffsets = new HashMap<>();
 
-//    private final Map<String, List<TransactionDto>> processedTransactions = new ConcurrentHashMap<>();
-
     private final TransactionStorage storage;
 
     public TransactionConsumer(KafkaConfig config, TransactionStorage storage) {
