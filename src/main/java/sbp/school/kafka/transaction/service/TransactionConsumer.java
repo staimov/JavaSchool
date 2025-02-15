@@ -1,23 +1,26 @@
-package sbp.school.kafka.consumer;
+package sbp.school.kafka.transaction.service;
 
-import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sbp.school.kafka.dto.TransactionDto;
+import sbp.school.kafka.config.KafkaConfig;
+import sbp.school.kafka.transaction.model.TransactionDto;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Класс потребитель сообщений-транзакций из брокера сообщений
  */
-public class TransactionConsumer implements AutoCloseable {
+public class TransactionConsumer extends Thread implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(TransactionConsumer.class);
+
+    public static final String PRODUCER_ID_HEADER_KEY = "producer-id";
 
     private final String topicName;
 
@@ -25,9 +28,12 @@ public class TransactionConsumer implements AutoCloseable {
 
     private final Map<TopicPartition, OffsetAndMetadata> currentOffsets = new HashMap<>();
 
-    public TransactionConsumer(Properties kafkaProperties) {
-        this.consumer = new KafkaConsumer<>(kafkaProperties);
-        this.topicName = kafkaProperties.getProperty("transaction.topic.name");
+    private final TransactionStorage storage;
+
+    public TransactionConsumer(KafkaConfig config, TransactionStorage storage) {
+        this.consumer = new KafkaConsumer<>(config.getTransactionConsumerProperties());
+        this.topicName = config.getProperty("transaction.topic.name");
+        this.storage = storage;
     }
 
     /**
@@ -84,11 +90,21 @@ public class TransactionConsumer implements AutoCloseable {
 
     private void processRecord(ConsumerRecord<String, TransactionDto> record) {
         TransactionDto transaction = record.value();
-        if (transaction == null) {
-            logger.warn("Пропуск невалидного сообщения: offset={}", record.offset());
+        String producerId = new String(record.headers().lastHeader(PRODUCER_ID_HEADER_KEY).value());
+        if (transaction == null || producerId.isBlank()) {
+            logger.warn("Пропущено невалидного сообщение: producerId={}, offset={}", producerId, record.offset());
             return;
         }
-        logger.debug("Получена и обработана валидная транзакция: {}, offset={}", transaction, record.offset());
+
+        storage.addTransactionByProducer(producerId, transaction);
+
+        logger.debug("Получена и обработана валидная транзакция: {}, producerId={}, offset={}",
+                transaction, producerId, record.offset());
+    }
+
+    @Override
+    public void run() {
+        consume();
     }
 
     /**
