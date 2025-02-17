@@ -23,7 +23,7 @@ public class AckConsumer extends Thread implements AutoCloseable {
 
     private final String topicName;
 
-    private final KafkaConsumer<String, AckDto> consumer;
+    private final Consumer<String, AckDto> consumer;
 
     private final TransactionProducer transactionProducer;
 
@@ -41,6 +41,21 @@ public class AckConsumer extends Thread implements AutoCloseable {
                 consumerProperties.getProperty(ConsumerConfig.GROUP_ID_CONFIG) + "-" + UUID.randomUUID());
 
         this.consumer = new KafkaConsumer<>(consumerProperties);
+        this.topicName = config.getProperty("transaction.ack.topic.name");
+        this.transactionProducer = transactionProducer;
+        this.storage = storage;
+    }
+
+    public AckConsumer(KafkaConfig config, TransactionProducer transactionProducer, TransactionStorage storage, Consumer<String, AckDto> consumer) {
+        Properties consumerProperties = config.getTransactionAckConsumerProperties();
+
+        // Так как коллекцию неподтвержденных отправленных транзакций мы храним в экземпляре продюсера транзакций,
+        // то требуется индивидуальный group.id для потребителя подтверждений,
+        // соответствующего данному экземпляру продюсера транзакций
+        consumerProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG,
+                consumerProperties.getProperty(ConsumerConfig.GROUP_ID_CONFIG) + "-" + UUID.randomUUID());
+
+        this.consumer = consumer;
         this.topicName = config.getProperty("transaction.ack.topic.name");
         this.transactionProducer = transactionProducer;
         this.storage = storage;
