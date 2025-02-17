@@ -1,5 +1,6 @@
 package sbp.school.kafka.transaction.service;
 
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -24,7 +25,7 @@ public class TransactionConsumer extends Thread implements AutoCloseable {
 
     private final String topicName;
 
-    private final KafkaConsumer<String, TransactionDto> consumer;
+    private final Consumer<String, TransactionDto> consumer;
 
     private final Map<TopicPartition, OffsetAndMetadata> currentOffsets = new HashMap<>();
 
@@ -32,6 +33,12 @@ public class TransactionConsumer extends Thread implements AutoCloseable {
 
     public TransactionConsumer(KafkaConfig config, TransactionStorage storage) {
         this.consumer = new KafkaConsumer<>(config.getTransactionConsumerProperties());
+        this.topicName = config.getProperty("transaction.topic.name");
+        this.storage = storage;
+    }
+
+    public TransactionConsumer(KafkaConfig config, TransactionStorage storage, Consumer<String, TransactionDto> consumer) {
+        this.consumer = consumer;
         this.topicName = config.getProperty("transaction.topic.name");
         this.storage = storage;
     }
