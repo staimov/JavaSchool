@@ -17,6 +17,7 @@
         <log4j2.version>2.22.0</log4j2.version>
         <json-schema-validator.version>1.0.87</json-schema-validator.version>
         <junit.version>5.11.4</junit.version>
+        <mockito.version>5.15.2</mockito.version>
     </properties>
 
     <dependencies>
@@ -63,6 +64,19 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -1,6 +1,7 @@
 package sbp.school.kafka.ack.service;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,7 @@ public class AckProducer extends Thread implements AutoCloseable  {
 
     private final String topicName;
 
-    private final KafkaProducer<String, AckDto> producer;
+    private final Producer<String, AckDto> producer;
 
     private final TransactionStorage storage;
 
@@ -35,6 +36,14 @@ public class AckProducer extends Thread implements AutoCloseable  {
 
     public AckProducer(KafkaConfig config, TransactionStorage storage) {
         this.producer = new KafkaProducer<>(config.getTransactionAckProducerProperties());
+        this.topicName = config.getProperty("transaction.ack.topic.name");
+        this.storage = storage;
+        this.receiveTimeout = Duration.parse(config.getProperty("transaction.receive.timeout"));
+        this.checksumIntervalDuration = Duration.parse(config.getProperty("transaction.checksum.interval"));
+    }
+
+    public AckProducer(KafkaConfig config, TransactionStorage storage, Producer<String, AckDto> producer) {
+        this.producer = producer;
         this.topicName = config.getProperty("transaction.ack.topic.name");
         this.storage = storage;
         this.receiveTimeout = Duration.parse(config.getProperty("transaction.receive.timeout"));
